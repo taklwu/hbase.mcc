@@ -394,7 +394,7 @@ public class HTableMultiCluster implements Table {
       }
     };
 
-    Boolean isPrimary = SpeculativeMutater.mutate(
+    Boolean isPrimary = SpeculativeMutator.mutate(
             waitTimeBeforeAcceptingBatchResults,
             waitTimeBeforeMutatingFailoverWithPrimaryException,
             function, primaryHTable, failoverHTables, lastPrimaryFail,
@@ -465,7 +465,7 @@ public class HTableMultiCluster implements Table {
       }
     };
 
-    Boolean isPrimary = SpeculativeMutater.mutate(
+    Boolean isPrimary = SpeculativeMutator.mutate(
             waitTimeBeforeAcceptingBatchResults,
             waitTimeBeforeMutatingFailoverWithPrimaryException,
             function, primaryHTable, failoverHTables, lastPrimaryFail,
@@ -496,7 +496,7 @@ public class HTableMultiCluster implements Table {
       }
     };
 
-    Boolean isPrimary = SpeculativeMutater.mutate(
+    Boolean isPrimary = SpeculativeMutator.mutate(
             waitTimeBeforeAcceptingBatchResults,
             waitTimeBeforeMutatingFailoverWithPrimaryException,
             function, primaryHTable, failoverHTables, lastPrimaryFail,
@@ -521,7 +521,7 @@ public class HTableMultiCluster implements Table {
       }
     };
 
-    Boolean isPrimary = SpeculativeMutater.mutate(
+    Boolean isPrimary = SpeculativeMutator.mutate(
             waitTimeBeforeAcceptingBatchResults,
             waitTimeBeforeMutatingFailoverWithPrimaryException,
             function, primaryHTable, failoverHTables, lastPrimaryFail,

@@ -30,8 +30,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class SpeculativeMutater {
-  static final Log LOG = LogFactory.getLog(SpeculativeMutater.class);
+public class SpeculativeMutator {
+  static final Log LOG = LogFactory.getLog(SpeculativeMutator.class);
 
   static ExecutorService exe = Executors.newFixedThreadPool(200);
   

@@ -20,11 +20,20 @@ package org.apache.hadoop.hbase.test;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.client.ConfigConst;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionManagerMultiClusterWrapper;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.HBaseAdminMultiCluster;
+import org.apache.hadoop.hbase.client.HBaseMultiClusterConfigUtil;
+import org.apache.hadoop.hbase.client.HTableMultiCluster;
+import org.apache.hadoop.hbase.client.HTableStats;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 
@@ -72,7 +81,8 @@ public class MultiThreadedMultiClusterWithCmApiTest {
 
     LOG.info("--Getting Configurations");
 
-    Configuration config = HBaseMultiClusterConfigUtil.combineConfigurations(cmHost1, username1, password1,
+    Configuration config = HBaseMultiClusterConfigUtil
+      .combineConfigurations(cmHost1, username1, password1,
             cluster1, hbaseService1,
             cmHost2, username2, password2,
             cluster2, hbaseService2);
@@ -176,7 +186,9 @@ public class MultiThreadedMultiClusterWithCmApiTest {
 
               Thread.sleep(millisecondToWait);
 
-              Get get = new Get(Bytes.toBytes(hash + ".key." + StringUtils.leftPad(String.valueOf(i * threadFinalNum), 12)));
+              Get get = new Get(Bytes.toBytes(
+                hash + ".key." + StringUtils.leftPad(
+                  String.valueOf(i * threadFinalNum), 12)));
               table.get(get);
 
               Thread.sleep(millisecondToWait);

@@ -17,17 +17,26 @@
  */
 package org.apache.hadoop.hbase.client;
 
-import java.io.*;
-import java.util.*;
+import com.cloudera.api.model.ApiService;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.zip.*;
 
 import com.cloudera.api.ClouderaManagerClientBuilder;
 import com.cloudera.api.DataView;
-import com.cloudera.api.model.*;
-import com.cloudera.api.v1.*;
 import com.cloudera.api.v8.RootResourceV8;
 import com.cloudera.api.v8.ServicesResourceV8;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import org.apache.cxf.jaxrs.ext.multipart.InputStreamDataSource;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;

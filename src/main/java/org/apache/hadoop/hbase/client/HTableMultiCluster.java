@@ -169,26 +169,17 @@ public class HTableMultiCluster implements Table {
     return new Tuple<boolean[]>(result.isPrimary, doesExists);
   }
 
+  @Override
   public void batch(final List<? extends Row> actions, final Object[] results)
           throws IOException, InterruptedException {
-    // TODO
+    // TODO why can't we just do batch with primary then batch failover if it does not work ?
+    //      what is AsyncProcess and AsyncProcessTask for batch ?
   }
 
-  public Object[] batch(final List<? extends Row> actions) throws IOException,
-          InterruptedException {
-    // TODO
-    return null;
-  }
-
+  @Override
   public <R> void batchCallback(List<? extends Row> actions, Object[] results,
                                 Callback<R> callback) throws IOException, InterruptedException {
     // TODO
-  }
-
-  public <R> Object[] batchCallback(List<? extends Row> actions,
-                                    Callback<R> callback) throws IOException, InterruptedException {
-    // TODO
-    return null;
   }
 
   public Result get(final Get get) throws IOException {
@@ -622,26 +613,6 @@ public class HTableMultiCluster implements Table {
         throw new RuntimeException(e);
       }
     }
-
-  }
-
-  public void setAutoFlush(boolean autoFlush, boolean clearBufferOnFail) {
-    // TODO Auto-generated method stub
-
-  }
-
-  public void setAutoFlushTo(boolean autoFlush) {
-    // TODO Auto-generated method stub
-
-  }
-
-  public long getWriteBufferSize() {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  public void setWriteBufferSize(long writeBufferSize) throws IOException {
-    // TODO Auto-generated method stub
 
   }
 

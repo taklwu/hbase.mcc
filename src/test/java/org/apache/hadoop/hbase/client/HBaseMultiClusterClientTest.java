@@ -18,6 +18,9 @@
 
 package org.apache.hadoop.hbase.client;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.HConstants;
@@ -25,10 +28,6 @@ import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.DynamicClassLoader;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class HBaseMultiClusterClientTest {
 
@@ -77,22 +76,22 @@ public class HBaseMultiClusterClientTest {
 
       System.out.println(strBuilder.toString());
 
-      HTable table1 = htu1.createTable(TABLE_NAME, FAM_NAME);
-      HTable table2 = htu2.createTable(TABLE_NAME, FAM_NAME);
+      Table table1 = htu1.createTable(TABLE_NAME, FAM_NAME);
+      Table table2 = htu2.createTable(TABLE_NAME, FAM_NAME);
 
       Configuration combinedConfig = HBaseMultiClusterConfigUtil.combineConfigurations(htu1.getConfiguration(),
               htu2.getConfiguration());
 
       combinedConfig.setInt(ConfigConst.HBASE_WAIT_TIME_BEFORE_TRYING_PRIMARY_AFTER_FAILURE, 0);
 
-      HConnection connection = HConnectionManagerMultiClusterWrapper.createConnection(combinedConfig);
+      Connection connection = ConnectionManagerMultiClusterWrapper.createConnection(combinedConfig);
 
-      HTableInterface multiTable = connection.getTable(TABLE_NAME);
+      Table multiTable = connection.getTable(TABLE_NAME);
 
       Put put1 = new Put(Bytes.toBytes("A1"));
-      put1.add(FAM_NAME, QUAL_NAME, VALUE);
+      put1.addColumn(FAM_NAME, QUAL_NAME, VALUE);
       multiTable.put(put1);
-      multiTable.flushCommits();
+      // multiTable.flushCommits();
 
       Get get1 = new Get(Bytes.toBytes("A1"));
       Result r1_1 = table1.get(get1);
@@ -115,7 +114,7 @@ public class HBaseMultiClusterClientTest {
       System.out.println("------------2");
 
       Put put2 = new Put(Bytes.toBytes("A2"));
-      put2.add(FAM_NAME, QUAL_NAME, VALUE);
+      put2.addColumn(FAM_NAME, QUAL_NAME, VALUE);
       System.out.println("------------3");
       table2.put(put2);
 
@@ -124,7 +123,7 @@ public class HBaseMultiClusterClientTest {
 
       System.out.println("------------5");
       multiTable.put(put2);
-      //multiTable.flushCommits();
+      // multiTable.flushCommits();
       //Get get2 = new Get(Bytes.toBytes("A2"));
       Result r2_2 = table2.get(get2);
       assertFalse("A2 not found in htu2", r2_2.isEmpty());
@@ -139,10 +138,10 @@ public class HBaseMultiClusterClientTest {
       System.out.println("------------7");
 
       Put put3 = new Put(Bytes.toBytes("A3"));
-      put3.add(FAM_NAME, QUAL_NAME, VALUE);
+      put3.addColumn(FAM_NAME, QUAL_NAME, VALUE);
       multiTable = connection.getTable(TABLE_NAME);
       multiTable.put(put3);
-      multiTable.flushCommits();
+      // multiTable.flushCommits();
       System.out.println("------------8");
 
       Get get3 = new Get(Bytes.toBytes("A3"));

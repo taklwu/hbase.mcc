@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to Cloudera, Inc. under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
@@ -41,16 +42,18 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
   public HBaseAdminMultiCluster(Configuration c)
       throws MasterNotRunningException, ZooKeeperConnectionException,
       IOException {
-    super(HBaseMultiClusterConfigUtil.splitMultiConfigFile(c).get(
-        HBaseMultiClusterConfigUtil.PRIMARY_NAME));
+    super((ClusterConnection) ConnectionFactory.createConnection(
+      HBaseMultiClusterConfigUtil.splitMultiConfigFile(c)
+        .get(HBaseMultiClusterConfigUtil.PRIMARY_NAME)));
 
     Map<String, Configuration> configs = HBaseMultiClusterConfigUtil
-        .splitMultiConfigFile(c);
+      .splitMultiConfigFile(c);
 
     for (Entry<String, Configuration> entry : configs.entrySet()) {
 
       if (!entry.getKey().equals(HBaseMultiClusterConfigUtil.PRIMARY_NAME)) {
-        HBaseAdmin admin = new HBaseAdmin(entry.getValue());
+        HBaseAdmin admin = new HBaseAdmin((ClusterConnection) ConnectionFactory.createConnection(
+          entry.getValue()));
         LOG.info("creating HBaseAdmin for : " + entry.getKey());
         failoverAdminMap.put(entry.getKey(), admin);
         LOG.info(" - successfully creating HBaseAdmin for : " + entry.getKey());
@@ -76,9 +79,9 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
     for (Entry<String, HBaseAdmin> entry : failoverAdminMap.entrySet()) {
       Map<TableName, HTableDescriptor> tempTableMap = new HashMap<TableName, HTableDescriptor>();
 
-      HTableDescriptor[] failureList = super.listTables();
+      TableDescriptor[] failureList = super.listTables();
 
-      for (HTableDescriptor table : failureList) {
+      for (TableDescriptor table : failureList) {
         TableName tableName = table.getTableName();
         if (tableMap.containsKey(tableName)) {
           tempTableMap.put(tableName, tableMap.get(tableName));
@@ -97,7 +100,7 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
   }
 
   @Override
-  public void createTable(final HTableDescriptor desc) throws IOException {
+  public void createTable(final TableDescriptor desc) throws IOException {
 
     HBaseAdminMultiCluster.super.createTable(desc, null);
 
@@ -129,7 +132,7 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
   }
 
   @Override
-  public void createTable(final HTableDescriptor desc, final byte[] startKey,
+  public void createTable(final TableDescriptor desc, final byte[] startKey,
       final byte[] endKey, final int numRegions) throws IOException {
 
     HBaseAdminMultiCluster.super.createTable(desc, startKey, endKey,
@@ -164,7 +167,7 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
   }
 
   @Override
-  public void createTable(final HTableDescriptor desc, 
+  public void createTable(final TableDescriptor desc, 
       final byte[][] splitKeys) throws IOException {
 
     HBaseAdminMultiCluster.super.createTable(desc, splitKeys);
@@ -237,7 +240,7 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
   }
 
   @Override
-  public void createTableAsync(final HTableDescriptor desc,
+  public Future<Void> createTableAsync(final TableDescriptor desc,
       final byte[][] splitKeys) throws IOException {
     
     @SuppressWarnings("unchecked")
@@ -247,7 +250,7 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
     callArray[counter++] = new Callable<Void>() {
       @Override
       public Void call() throws Exception {
-        LOG.info("createTableAsync: " + desc.getName() + " for cluster: primary");
+        LOG.info("createTableAsync: " + desc.getTableName() + " for cluster: primary");
         HBaseAdminMultiCluster.super.createTableAsync(desc, splitKeys);
         return null;
       }
@@ -257,14 +260,15 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
       callArray[counter++] = new Callable<Void>() {
         @Override
         public Void call() throws Exception {
-          LOG.info("createTableAsync: " + desc.getName() + " for cluster: " + entry.getKey());
+          LOG.info("createTableAsync: " + desc.getTableName() + " for cluster: " + entry.getKey());
           entry.getValue().createTableAsync(desc, splitKeys);
           return null;
         }
       };
     }
     replicationClusterExecute(callArray, "createTableAsync");
-
+    LOG.info("Sucessfully called createTableAsync");
+    return null;
   }
 
   @Override
@@ -301,16 +305,6 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
       };
     }
     replicationClusterExecute(callArray, "deleteTable");
-  }
-
-  @Override
-  public void deleteTable(final String tableName) throws IOException {
-    deleteTable(TableName.valueOf(tableName));
-  }
-
-  @Override
-  public void deleteTable(final byte[] tableName) throws IOException {
-    deleteTable(TableName.valueOf(tableName));
   }
 
   @Override
@@ -374,17 +368,7 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
     replicationClusterExecute(callArray, "enableTable");
   }
 
-  @Override
-  public void enableTable(final byte[] tableName) throws IOException {
-    enableTable(TableName.valueOf(tableName));
-  }
-
-  @Override
-  public void enableTable(final String tableName) throws IOException {
-    enableTable(TableName.valueOf(tableName));
-  }
-
-  public void enableTableAsync(final TableName tableName) throws IOException {
+  public Future<Void> enableTableAsync(final TableName tableName) throws IOException {
     Callable<Void>[] callArray = new Callable[failoverAdminMap.size() + 1];
     int counter = 0;
 
@@ -406,23 +390,16 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
       };
     }
     replicationClusterExecute(callArray, "enableTableAsync");
+    return null;
   }
 
-  @Override
-  public void enableTableAsync(final byte[] tableName) throws IOException {
-    enableTable(TableName.valueOf(tableName));
-  }
-
-  @Override
-  public void enableTableAsync(final String tableName) throws IOException {
-    enableTableAsync(TableName.valueOf(tableName));
-  }
 
   @Override
   public HTableDescriptor[] enableTables(String regex) throws IOException {
     return enableTables(Pattern.compile(regex));
   }
 
+  @Override
   public HTableDescriptor[] enableTables(final Pattern pattern) throws IOException {
     Callable<Void>[] callArray = new Callable[failoverAdminMap.size() + 1];
     int counter = 0;
@@ -451,7 +428,7 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
   }
 
   @Override
-  public void disableTableAsync(final TableName tableName) throws IOException {
+  public Future<Void> disableTableAsync(final TableName tableName) throws IOException {
     Callable<Void>[] callArray = new Callable[failoverAdminMap.size() + 1];
     int counter = 0;
 
@@ -473,16 +450,7 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
       };
     }
     replicationClusterExecute(callArray, "disableTableAsync");
-  }
-
-  @Override
-  public void disableTableAsync(final byte[] tableName) throws IOException {
-    disableTableAsync(TableName.valueOf(tableName));
-  }
-
-  @Override
-  public void disableTableAsync(final String tableName) throws IOException {
-    disableTableAsync(TableName.valueOf(tableName));
+    return null;
   }
 
   @Override
@@ -516,16 +484,6 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
     }
     replicationClusterExecute(callArray, "disableTable");
     */
-  }
-
-  @Override
-  public void disableTable(final byte[] tableName) throws IOException {
-    disableTable(TableName.valueOf(tableName));
-  }
-
-  @Override
-  public void disableTable(final String tableName) throws IOException {
-    disableTable(TableName.valueOf(tableName));
   }
 
   /**

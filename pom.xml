@@ -40,6 +40,56 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>2.10.5</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.10.5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-minicluster</artifactId>
+			<version>3.1.1.7.2.13.0-SNAPSHOT</version>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.zookeeper</groupId>
+					<artifactId>zookeeper</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-minikdc</artifactId>
+			<version>3.1.1.7.2.13.0-SNAPSHOT</version>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>bouncycastle</groupId>
+					<artifactId>bcprov-jdk15</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-hdfs</artifactId>
+			<version>3.1.1.7.2.13.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-hdfs</artifactId>
+			<version>3.1.1.7.2.13.0-SNAPSHOT</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
 			<version>3.1.1.7.2.13.0-SNAPSHOT</version>
@@ -49,7 +99,7 @@
 			<artifactId>hadoop-common</artifactId>
 			<version>3.1.1.7.2.13.0-SNAPSHOT</version>
 			<type>test-jar</type>
-			<classifier>tests</classifier>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hbase</groupId>
@@ -85,7 +135,7 @@
 			<artifactId>hbase-hadoop2-compat</artifactId>
 			<version>2.2.6.7.2.13.0-SNAPSHOT</version>
 			<type>test-jar</type>
-			<classifier>tests</classifier>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hbase</groupId>
@@ -97,7 +147,7 @@
 			<artifactId>hbase-common</artifactId>
 			<version>2.2.6.7.2.13.0-SNAPSHOT</version>
 			<type>test-jar</type>
-			<classifier>tests</classifier>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hbase</groupId>
@@ -109,7 +159,7 @@
 			<artifactId>hbase-hadoop-compat</artifactId>
 			<version>2.2.6.7.2.13.0-SNAPSHOT</version>
 			<type>test-jar</type>
-			<classifier>tests</classifier>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<artifactId>hbase-zookeeper</artifactId>

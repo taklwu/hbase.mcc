@@ -121,6 +121,14 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hbase</groupId>
+			<artifactId>hbase-annotations</artifactId>
+			<version>2.2.6.7.2.13.0-SNAPSHOT</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+			<classifier>tests</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.hbase</groupId>
 			<artifactId>hbase-protocol</artifactId>
 			<version>2.2.6.7.2.13.0-SNAPSHOT</version>
 		</dependency>
@@ -212,6 +220,21 @@
             </execution>
         </executions>
         </plugin>
+			<!-- Testing plugins -->
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<systemPropertyVariables>
+						<test.build.webapps>target/test-classes/webapps</test.build.webapps>
+					</systemPropertyVariables>
+					<redirectTestOutputToFile>true</redirectTestOutputToFile>
+					<forkedProcessTimeoutInSeconds>7200</forkedProcessTimeoutInSeconds>
+					<!-- skip reusing fork for avoiding test failure, especially for tests run
+                         between the secure and insecure mini clusters -->
+					<reuseForks>false</reuseForks>
+				</configuration>
+				<version>3.0.0-M4</version>
+			</plugin>
         </plugins>
         <!--
         <plugins>

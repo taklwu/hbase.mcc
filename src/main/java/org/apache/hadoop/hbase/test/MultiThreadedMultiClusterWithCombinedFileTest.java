@@ -25,6 +25,8 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.CldrConnectionImplementation;
+import org.apache.hadoop.hbase.client.ClusterConnection;
 import org.apache.hadoop.hbase.client.ConfigConst;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionManagerMultiClusterWrapper;
@@ -32,10 +34,13 @@ import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HBaseAdminMultiCluster;
+import org.apache.hadoop.hbase.client.HBaseMultiClusterConfigUtil;
 import org.apache.hadoop.hbase.client.HTableMultiCluster;
 import org.apache.hadoop.hbase.client.HTableStats;
+import org.apache.hadoop.hbase.client.NonSaslZKAsyncRegistry;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.mapreduce.CldrTableUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.BufferedWriter;
@@ -75,12 +80,32 @@ public class MultiThreadedMultiClusterWithCombinedFileTest {
     final int millisecondToWait = Integer.parseInt(args[4]);
     final int numberOfThreads = Integer.parseInt(args[5]);
     final String outputCsvFile = args[6];
+    boolean isReplicationPlugin = false;
+    if (args.length >= 8) {
+      isReplicationPlugin = Boolean.valueOf(args[7]);
+      System.out.println("Setting replication plugin");
+    }
+    config.setBoolean("isReplicationPlugin", isReplicationPlugin);
 
     System.out.println("Getting HAdmin");
 
     System.out.println(ConfigConst.HBASE_FAILOVER_CLUSTERS_CONFIG + ": " + config.get(ConfigConst.HBASE_FAILOVER_CLUSTERS_CONFIG));
     System.out.println("hbase.zookeeper.quorum: " + config.get("hbase.zookeeper.quorum"));
     System.out.println("hbase.failover.cluster.fail1.hbase.hstore.compaction.max: " + config.get("hbase.failover.cluster.fail1.hbase.hstore.compaction.max"));
+
+    if (isReplicationPlugin) {
+      System.out.println("Primary Setting CldrConnectionImplementation");
+      config.set(ClusterConnection.HBASE_CLIENT_CONNECTION_IMPL,
+        CldrConnectionImplementation.class.getName());
+      config.set("hbase.client.registry.impl", NonSaslZKAsyncRegistry.class.getName());
+      config.setBoolean(CldrTableUtil.CLDR_CROSS_DOMAIN, true);
+    }
+
+    Configuration cloneConfig = new Configuration(config);
+    Configuration primary = HBaseMultiClusterConfigUtil.splitMultiConfigFile(cloneConfig)
+      .get("primary");
+
+    System.out.println("primary connection =" +  primary.get(ClusterConnection.HBASE_CLIENT_CONNECTION_IMPL));
 
     HBaseAdmin admin = new HBaseAdminMultiCluster(config);
 

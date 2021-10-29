@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.mapreduce.CldrTableUtil;
 import org.apache.log4j.Logger;
 
 public class ConnectionManagerMultiClusterWrapper {
@@ -35,19 +36,28 @@ public class ConnectionManagerMultiClusterWrapper {
 
     Collection < String > failoverClusters = conf
             .getStringCollection(ConfigConst.HBASE_FAILOVER_CLUSTERS_CONFIG);
+    boolean isReplicationPlugin = conf.getBoolean("isReplicationPlugin", false);
+
+    if (isReplicationPlugin) {
+      conf.set(ClusterConnection.HBASE_CLIENT_CONNECTION_IMPL,
+        CldrConnectionImplementation.class.getName());
+      conf.set("hbase.client.registry.impl", NonSaslZKAsyncRegistry.class.getName());
+      conf.setBoolean(CldrTableUtil.CLDR_CROSS_DOMAIN, true);
+    }
 
     if (failoverClusters.size() == 0) {
       LOG.info(" -- Getting a signle cluster connection !!");
-      return ConnectionFactory.createConnection(conf);
+      return CldrTableUtil.createConnection(conf);
     } else {
 
       Map<String, Configuration> configMap = HBaseMultiClusterConfigUtil
           .splitMultiConfigFile(conf);
 
       LOG.info(" -- Getting primary Connction");
-      Connection primaryConnection = ConnectionFactory
-          .createConnection(configMap
-              .get(HBaseMultiClusterConfigUtil.PRIMARY_NAME));
+      Configuration primaryConf = configMap.get(HBaseMultiClusterConfigUtil.PRIMARY_NAME);
+      primaryConf.setBoolean(CldrTableUtil.CLDR_CROSS_DOMAIN, true);
+      Connection primaryConnection = CldrTableUtil
+          .createConnection(primaryConf);
       LOG.info(" --- Got primary Connction");
 
       ArrayList<Connection> failoverConnections = new ArrayList<Connection>();
@@ -55,8 +65,14 @@ public class ConnectionManagerMultiClusterWrapper {
       for (Entry<String, Configuration> entry : configMap.entrySet()) {
         if (!entry.getKey().equals(HBaseMultiClusterConfigUtil.PRIMARY_NAME)) {
           LOG.info(" -- Getting failure Connction");
-          failoverConnections.add(ConnectionFactory.createConnection(entry
-              .getValue()));
+          Configuration failoverConf = entry.getValue();
+          if (isReplicationPlugin) {
+            failoverConf.set(ClusterConnection.HBASE_CLIENT_CONNECTION_IMPL,
+              CldrConnectionImplementation.class.getName());
+            failoverConf.set("hbase.client.registry.impl", NonSaslZKAsyncRegistry.class.getName());
+            failoverConf.setBoolean(CldrTableUtil.CLDR_CROSS_DOMAIN, true);
+          }
+          failoverConnections.add(CldrTableUtil.createConnection(failoverConf));
           LOG.info(" --- Got failover Connction");
         }
       }

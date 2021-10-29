@@ -22,7 +22,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
@@ -30,6 +33,7 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
+import org.apache.hadoop.hbase.mapreduce.CldrTableUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 
@@ -39,22 +43,56 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
 
   Map<String, HBaseAdmin> failoverAdminMap = new HashMap<String, HBaseAdmin>();
 
+  static Future<Void> NULL_FUTURE = new Future<Void>() {
+    @Override public boolean cancel(boolean mayInterruptIfRunning) {
+      return false;
+    }
+
+    @Override public boolean isCancelled() {
+      return false;
+    }
+
+    @Override public boolean isDone() {
+      return true;
+    }
+
+    @Override public Void get() throws InterruptedException, ExecutionException {
+      return null;
+    }
+
+    @Override
+    public Void get(long timeout, TimeUnit unit)
+      throws InterruptedException, ExecutionException, TimeoutException {
+      return null;
+    }
+  };
+
   public HBaseAdminMultiCluster(Configuration c)
       throws MasterNotRunningException, ZooKeeperConnectionException,
       IOException {
-    super((ClusterConnection) ConnectionFactory.createConnection(
+    super((ClusterConnection) CldrTableUtil.createConnection(
       HBaseMultiClusterConfigUtil.splitMultiConfigFile(c)
         .get(HBaseMultiClusterConfigUtil.PRIMARY_NAME)));
 
+    boolean isReplicationPlugin = c.getBoolean("isReplicationPlugin", false);
     Map<String, Configuration> configs = HBaseMultiClusterConfigUtil
       .splitMultiConfigFile(c);
 
     for (Entry<String, Configuration> entry : configs.entrySet()) {
-
       if (!entry.getKey().equals(HBaseMultiClusterConfigUtil.PRIMARY_NAME)) {
-        HBaseAdmin admin = new HBaseAdmin((ClusterConnection) ConnectionFactory.createConnection(
-          entry.getValue()));
+        Configuration conf = entry.getValue();
+        if (isReplicationPlugin) {
+          System.out.println("Failover Setting CldrConnectionImplementation");
+          conf.set(ClusterConnection.HBASE_CLIENT_CONNECTION_IMPL,
+            CldrConnectionImplementation.class.getName());
+          conf.set("hbase.client.registry.impl", NonSaslZKAsyncRegistry.class.getName());
+          conf.setBoolean(CldrTableUtil.CLDR_CROSS_DOMAIN, true);
+        }
+
+        HBaseAdmin admin = new HBaseAdmin((ClusterConnection) CldrTableUtil.createConnection(
+          conf));
         LOG.info("creating HBaseAdmin for : " + entry.getKey());
+        System.out.println("creating HBaseAdmin for : " + entry.getKey());
         failoverAdminMap.put(entry.getKey(), admin);
         LOG.info(" - successfully creating HBaseAdmin for : " + entry.getKey());
       }
@@ -268,7 +306,7 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
     }
     replicationClusterExecute(callArray, "createTableAsync");
     LOG.info("Sucessfully called createTableAsync");
-    return null;
+    return NULL_FUTURE;
   }
 
   @Override
@@ -390,7 +428,7 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
       };
     }
     replicationClusterExecute(callArray, "enableTableAsync");
-    return null;
+    return NULL_FUTURE;
   }
 
 
@@ -450,7 +488,7 @@ public class HBaseAdminMultiCluster extends HBaseAdmin {
       };
     }
     replicationClusterExecute(callArray, "disableTableAsync");
-    return null;
+    return NULL_FUTURE;
   }
 
   @Override

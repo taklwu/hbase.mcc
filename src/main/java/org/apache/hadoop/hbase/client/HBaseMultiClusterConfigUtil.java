@@ -39,6 +39,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.apache.cxf.jaxrs.ext.multipart.InputStreamDataSource;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.log4j.Logger;
 
@@ -208,12 +209,14 @@ public class HBaseMultiClusterConfigUtil {
   public static Configuration generateCombinedConfig(String primaryConfigFile, Map<String, String> failoverConfigNameAndFiles) throws IOException {
 
     Configuration primaryConfig = HBaseConfiguration.create();
-    primaryConfig.addResource(primaryConfigFile);
+    System.out.println("Reading: primaryConfigFile");
+    primaryConfig.addResource(new Path(primaryConfigFile));
 
     HashMap<String, Configuration> failoverMap = new HashMap<String, Configuration>();
     for (Entry<String, String> entry: failoverConfigNameAndFiles.entrySet()) {
       Configuration failureConfig = HBaseConfiguration.create();
-      failureConfig.addResource(entry.getValue());
+      System.out.println("Reading: configFile" + entry.getValue());
+      failureConfig.addResource(new Path(entry.getValue()));
       failoverMap.put(entry.getKey(), failureConfig);
     }
     return combineConfigurations(primaryConfig, failoverMap);
@@ -354,6 +357,7 @@ public class HBaseMultiClusterConfigUtil {
     while(primaryIt.hasNext()) {
       Entry<String, String> primaryKeyValue = primaryIt.next();
       resultingConfig.set(primaryKeyValue.getKey().replace('_', '.'), primaryKeyValue.getValue());
+      System.out.println("key = " + primaryKeyValue.getKey() + ", value = " + primaryKeyValue.getValue());
     }
 
 
@@ -372,12 +376,13 @@ public class HBaseMultiClusterConfigUtil {
         Entry<String, String> keyValue = it.next();
 
         LOG.info(" -- Looking at : " + keyValue.getKey() + "=" + keyValue.getValue());
-
+        System.out.println("failover key = " + keyValue.getKey() + ", value = " + keyValue.getValue());
         String configKey = keyValue.getKey().replace('_', '.');
 
         if (configKey.startsWith("hbase.")) {
           resultingConfig.set(ConfigConst.HBASE_FAILOVER_CLUSTER_CONFIG + "." + failover.getKey() + "." + configKey , keyValue.getValue());
           LOG.info(" - Porting config: " + configKey + "=" + keyValue.getValue());
+          System.out.println("failover padding key = " + configKey + ", value = " + keyValue.getValue());
         }
       }
     }

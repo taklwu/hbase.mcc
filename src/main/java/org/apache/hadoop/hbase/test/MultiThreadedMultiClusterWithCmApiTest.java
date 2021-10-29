@@ -95,6 +95,11 @@ public class MultiThreadedMultiClusterWithCmApiTest {
     final int millisecondToWait = Integer.parseInt(args[13]);
     final int numberOfThreads = Integer.parseInt(args[14]);
     final String outputCsvFile = args[15];
+    boolean isReplicationPlugin = false;
+    if (args.length >= 17) {
+      isReplicationPlugin = Boolean.valueOf(args[16]);
+      LOG.info("Setting replication plugin");
+    }
 
     LOG.info("Getting HAdmin");
 
@@ -145,6 +150,7 @@ public class MultiThreadedMultiClusterWithCmApiTest {
 
     config.set("hbase.client.retries.number", "1");
     config.set("hbase.client.pause", "1");
+    config.setBoolean("isReplicationPlugin", isReplicationPlugin);
 
     final Connection connection = ConnectionManagerMultiClusterWrapper.createConnection(config);
 
